@@ -20,15 +20,19 @@ from export_lectures import (
 )
 from export_slides import export_slide_pdf, get_slide_links
 from export_slides import slug_from_href as slide_slug
+from export_assignments import get_assignment_links
+from export_assignments import slug_from_href as assignment_slug
 
 
 def main():
     output_root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("output")
     lectures_dir = output_root / "lectures"
     slides_dir = output_root / "slides"
+    assignments_dir = output_root / "assignments"
 
     lectures_dir.mkdir(parents=True, exist_ok=True)
     slides_dir.mkdir(parents=True, exist_ok=True)
+    assignments_dir.mkdir(parents=True, exist_ok=True)
 
     session = requests.Session()
     session.headers["User-Agent"] = "CS633-Exporter/1.0 (educational project)"
@@ -70,6 +74,26 @@ def main():
         print(f"        -> {out_path}")
         try:
             asyncio.run(export_slide_pdf(url, out_path))
+        except Exception as e:
+            print(f"  ERROR: {e}", file=sys.stderr)
+
+    # ── Assignments ───────────────────────────────────────────────────────────────
+    print("\nFetching assignment list from nav...")
+    assignments = get_assignment_links(session)
+    print(f"Found {len(assignments)} assignment(s).\n")
+
+    n = len(assignments)
+    for i, assignment in enumerate(assignments, 1):
+        slug = assignment_slug(assignment["href"])
+        out_path = assignments_dir / f"{slug}.md"
+        print(f"[{i}/{n}] {assignment['title']}")
+        if out_path.exists():
+            print("        SKIP  (already exported)")
+            continue
+        print(f"        -> {out_path}")
+        try:
+            md = fetch_lecture(session, assignment["href"])
+            out_path.write_text(md, encoding="utf-8")
         except Exception as e:
             print(f"  ERROR: {e}", file=sys.stderr)
 
