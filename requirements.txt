@@ -1,0 +1,4 @@
+requests
+beautifulsoup4
+markdownify==1.2.2
+playwright

@@ -1,0 +1,6 @@
+.venv/
+.playwright_installed
+__pycache__/
+output/
+CS631-Site-Exporter
+.env
